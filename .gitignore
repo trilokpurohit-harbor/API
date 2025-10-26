@@ -5,3 +5,5 @@ dist
 coverage
 .github
 .vscode
+
+prisma/*.db
