@@ -7,5 +7,4 @@ model UserRole {
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([roleId])
-  @@unique([userId, roleId])
 }
