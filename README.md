@@ -18,6 +18,7 @@ Make sure you install the exact Node and pnpm versions (e.g. via fnm, nvm, or Vo
 - Update `.env` with your local PostgreSQL credentials and secrets:
     - `DATABASE_URL` / `SHADOW_DATABASE_URL` should match your databases.
     - Keep the seed users (`MASTER_USER_*`) and `JWT_SECRET` aligned with the credentials you plan to use.
+    - Configure token expiry and secrets (`JWT_EXPIRATION`, `JWT_REFRESH_SECRET`, `JWT_REFRESH_EXPIRATION`) to suit your environment.
 - Do not commit your `.env`; the checked-in `.env.example` remains the canonical template when values change.
 
 ## Project Layout & Conventions

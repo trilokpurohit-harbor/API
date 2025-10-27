@@ -4,6 +4,7 @@ import { AuthService, LoginResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
 import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -14,6 +15,13 @@ export class AuthController {
     @ApiBody({ type: LoginDto })
     login(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
         return this.authService.login(loginDto, request);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('refresh')
+    @ApiBody({ type: RefreshTokenDto })
+    refresh(@Body() dto: RefreshTokenDto, @Req() request: Request): Promise<LoginResponse> {
+        return this.authService.refresh(dto.refreshToken, request);
     }
 
     @Post('logout')
