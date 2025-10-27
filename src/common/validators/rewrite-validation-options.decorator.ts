@@ -25,7 +25,7 @@ export class UpdatableValidationPipe extends ValidationPipe {
         };
     }
 
-    async transform(value: any, metadata: ArgumentMetadata) {
+    async transform(value: unknown, metadata: ArgumentMetadata) {
         if (metadata == null || metadata.metatype == null) return value;
         const overrideOptions = this.reflector.get<ValidatorOptions>(REWRITE_VALIDATION_OPTIONS, metadata.metatype);
 
