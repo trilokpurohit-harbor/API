@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { isUUID } from 'class-validator';
 import type { Prisma, Role, User } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
@@ -34,6 +34,7 @@ export class UserService {
     async create(dto: CreateUserDto): Promise<UserProfile> {
         const passwordHash = await this.hashPassword(dto.password);
         const role = await this.findRole(dto.role ?? RoleName.Broker);
+        await this.ensureRoleAvailable(role);
         const user = await this.prisma.client.user.create({
             data: {
                 email: dto.email,
@@ -92,6 +93,7 @@ export class UserService {
             });
             if (dto.role) {
                 const role = await this.findRole(dto.role);
+                await this.ensureRoleAvailable(role, id);
                 await this.prisma.client.userRole.upsert({
                     where: { userId: user.id },
                     update: { roleId: role.id },
@@ -109,6 +111,7 @@ export class UserService {
     async assignRole(userId: string, roleName: RoleName): Promise<UserProfile> {
         await this.findOne(userId);
         const role = await this.findRole(roleName);
+        await this.ensureRoleAvailable(role, userId);
 
         await this.prisma.client.userRole.upsert({
             where: { userId },
@@ -141,6 +144,13 @@ export class UserService {
 
     private async hashPassword(password: string): Promise<string> {
         return hash(password, UserService.SALT_ROUNDS);
+    }
+
+    private async ensureRoleAvailable(role: Role, currentUserId?: string): Promise<void> {
+        const existingAssignment = await this.prisma.client.userRole.findFirst({ where: { roleId: role.id } });
+        if (existingAssignment && existingAssignment.userId !== currentUserId) {
+            throw new BadRequestException(`Role '${role.name}' is already assigned to another user`);
+        }
     }
 
     private rethrowNotFound(error: unknown, id: string): asserts error is never {

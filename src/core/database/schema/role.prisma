@@ -9,7 +9,7 @@ model Role {
   createdBy String?
   updatedBy String?
   deletedBy String?
-  userRoles UserRole[]
+  userRole UserRole?
 
   @@index([deletedAt])
 }

@@ -1,10 +1,8 @@
 model UserRole {
   id        Int      @id @default(autoincrement())
   userId    String   @unique
-  roleId    Int
+  roleId    Int      @unique
   assignedAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
-
-  @@index([roleId])
 }
