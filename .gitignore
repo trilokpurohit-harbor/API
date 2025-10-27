@@ -3,7 +3,5 @@ dist
 .env
 .DS_Store
 coverage
-.github
-.vscode
 
 prisma/*.db
