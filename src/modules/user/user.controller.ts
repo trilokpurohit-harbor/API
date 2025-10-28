@@ -5,8 +5,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { AssignRoleDto } from './dto/assign-role.dto';
 import { UserService } from './user.service';
-import { RolesGuard } from '@common/guards/roles.guard';
-import { RoleName } from '@common/enums/role-name.enum';
+import { UserType } from '@prisma/client';
+import { UserTypeGuard } from '@app/common/guards/userType.guard';
 
 @Controller('users')
 @UseGuards(AuthGuard)
@@ -36,9 +36,9 @@ export class UserController {
 
     @Patch('role')
     @ApiOperation({ description: 'Assign role to user (Admin only)' })
-    @UseGuards(RolesGuard(RoleName.Admin))
+    @UseGuards(UserTypeGuard(UserType.Admin))
     assignRole(@Body() assignRoleDto: AssignRoleDto) {
-        return this.userService.assignRole(assignRoleDto.userId, assignRoleDto.role);
+        return this.userService.assignRole(assignRoleDto.userId, assignRoleDto.roleId);
     }
 
     @Delete(':id')

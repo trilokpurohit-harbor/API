@@ -5,7 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
 import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
-import { RoleName } from '@common/enums/role-name.enum';
+import { UserType } from '@prisma/client';
 
 @Controller('auth')
 export class AuthController {
@@ -16,7 +16,7 @@ export class AuthController {
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Admin login' })
     loginAdmin(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, RoleName.Admin);
+        return this.authService.login(loginDto, request, UserType.Admin);
     }
 
     @HttpCode(HttpStatus.OK)
@@ -24,7 +24,7 @@ export class AuthController {
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Dealer login' })
     loginDealer(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, RoleName.Dealer);
+        return this.authService.login(loginDto, request, UserType.Dealer);
     }
 
     @HttpCode(HttpStatus.OK)
@@ -32,7 +32,7 @@ export class AuthController {
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Broker login' })
     loginBroker(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, RoleName.Broker);
+        return this.authService.login(loginDto, request, UserType.Broker);
     }
 
     @HttpCode(HttpStatus.OK)

@@ -2,9 +2,9 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
 import type { Request } from 'express';
-import { RoleName } from '@common/enums/role-name.enum';
 import { LoginDto } from './dto/login.dto';
 import { UserProfile, UserService } from '../user/user.service';
+import { UserType } from '@prisma/client';
 
 export interface LoginResponse {
     accessToken: string;
@@ -35,19 +35,19 @@ export class AuthService {
         this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? 'change-me-refresh';
     }
 
-    async login(loginInfo: LoginDto, request: Request, requiredRole?: RoleName): Promise<LoginResponse> {
-        const user = await this.validateUser(loginInfo.email, loginInfo.password, request);
+    async login(loginInfo: LoginDto, request: Request, requiredType: UserType): Promise<LoginResponse> {
+        const user = await this.validateUser(loginInfo.email, loginInfo.password, request, requiredType);
         if (!user) {
             this.logger.warn(this.formatLogMessage('auth.login.failure', request, { email: loginInfo.email }));
             throw new UnauthorizedException('Invalid credentials');
         }
-        const userRole = user.userRole?.role?.name ?? null;
-        if (requiredRole && userRole !== requiredRole) {
+        const userType = user.type;
+        if (requiredType && userType !== requiredType) {
             this.logger.warn(
                 this.formatLogMessage('auth.login.role_mismatch', request, {
                     userId: user.id,
-                    expectedRole: requiredRole,
-                    actualRole: userRole,
+                    expectedRole: requiredType,
+                    actualRole: userType,
                 }),
             );
             throw new UnauthorizedException('Invalid credentials');
@@ -56,7 +56,8 @@ export class AuthService {
         const payload = {
             sub: user.id,
             email: user.email,
-            role: userRole,
+            type: userType,
+            role: user.userRole?.role?.name ?? null,
         } as const;
         const accessToken = await this.jwtService.signAsync(payload, {
             expiresIn: this.jwtExpiresIn,
@@ -86,6 +87,7 @@ export class AuthService {
             const newPayload = {
                 sub: user.id,
                 email: user.email,
+                type: user.type,
                 role: user.userRole?.role?.name ?? null,
             } as const;
 
@@ -115,19 +117,20 @@ export class AuthService {
         }
     }
 
-    async validateUser(email: string, password: string, request?: Request): Promise<UserProfile | null> {
-        const user = await this.userService.findByEmailWithPassword(email);
+    async validateUser(
+        email: string,
+        password: string,
+        request: Request,
+        requiredType: UserType,
+    ): Promise<UserProfile | null> {
+        const user = await this.userService.findActiveUserForLogin(email, requiredType);
         if (!user) {
-            if (request) {
-                this.logger.debug(this.formatLogMessage('auth.login.user_missing', request, { email }));
-            }
+            this.logger.debug(this.formatLogMessage('auth.login.user_missing', request, { email }));
             return null;
         }
         const isPasswordValid = await compare(password, user.passwordHash);
         if (!isPasswordValid) {
-            if (request) {
-                this.logger.debug(this.formatLogMessage('auth.login.password_mismatch', request, { email }));
-            }
+            this.logger.debug(this.formatLogMessage('auth.login.password_mismatch', request, { email }));
             return null;
         }
         return this.userService.findOne(user.id);

@@ -1,7 +1,6 @@
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, UserType } from '@prisma/client';
 import { hash } from 'bcryptjs';
-import { RoleName } from 'src/common/enums/role-name.enum';
 
 const prisma = new PrismaClient();
 const SALT_ROUNDS = 12;
@@ -11,37 +10,22 @@ interface SeedUser {
     password: string;
     firstName: string;
     lastName?: string | null;
-    role: RoleName;
+    type: UserType;
     isActive?: boolean;
 }
 
 async function main(): Promise<void> {
     const users: SeedUser[] = buildSeedUsers();
-
-    await Promise.all(
-        Object.values(RoleName).map((roleName) =>
-            prisma.role.upsert({
-                where: { name: roleName },
-                update: {},
-                create: {
-                    name: roleName,
-                    description: `${roleName.charAt(0).toUpperCase()}${roleName.slice(1)} role`,
-                    createdBy: 'seed',
-                },
-            }),
-        ),
-    );
-
     for (const user of users) {
         const passwordHash = await hash(user.password, SALT_ROUNDS);
-        const role = await prisma.role.findUniqueOrThrow({ where: { name: user.role } });
 
-        const savedUser = await prisma.user.upsert({
+        await prisma.user.upsert({
             where: { email: user.email },
             update: {
                 firstName: user.firstName,
                 lastName: user.lastName ?? null,
                 isActive: user.isActive ?? true,
+                type: user.type,
                 passwordHash,
             },
             create: {
@@ -49,14 +33,9 @@ async function main(): Promise<void> {
                 firstName: user.firstName,
                 lastName: user.lastName ?? null,
                 isActive: user.isActive ?? true,
+                type: user.type,
                 passwordHash,
             },
-        });
-
-        await prisma.userRole.upsert({
-            where: { userId: savedUser.id },
-            update: { roleId: role.id },
-            create: { userId: savedUser.id, roleId: role.id },
         });
     }
 }
@@ -67,7 +46,7 @@ function buildSeedUsers(): SeedUser[] {
         password: envOrThrow('MASTER_USER_PASSWORD'),
         firstName: envOrDefault('MASTER_USER_FIRST_NAME', 'Master'),
         lastName: envOrDefault('MASTER_USER_LAST_NAME', 'Admin'),
-        role: RoleName.Admin,
+        type: UserType.Admin,
     };
 
     const dealerUser: SeedUser = {
@@ -75,7 +54,7 @@ function buildSeedUsers(): SeedUser[] {
         password: envOrDefault('DEALER_USER_PASSWORD', 'DealerPass123!'),
         firstName: envOrDefault('DEALER_USER_FIRST_NAME', 'Daphne'),
         lastName: envOrDefault('DEALER_USER_LAST_NAME', 'Dealer'),
-        role: RoleName.Dealer,
+        type: UserType.Dealer,
     };
 
     const brokerUser: SeedUser = {
@@ -83,7 +62,7 @@ function buildSeedUsers(): SeedUser[] {
         password: envOrDefault('BROKER_USER_PASSWORD', 'BrokerPass123!'),
         firstName: envOrDefault('BROKER_USER_FIRST_NAME', 'Brandon'),
         lastName: envOrDefault('BROKER_USER_LAST_NAME', 'Broker'),
-        role: RoleName.Broker,
+        type: UserType.Broker,
     };
 
     return [masterUser, dealerUser, brokerUser];

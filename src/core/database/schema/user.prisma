@@ -1,3 +1,9 @@
+enum UserType {
+  Admin
+  Dealer
+  Broker
+}
+
 model User {
   id           String   @id @default(uuid())
   email        String   @unique
@@ -5,6 +11,7 @@ model User {
   lastName     String?
   passwordHash String
   isActive     Boolean  @default(true)
+  type         UserType @default(Dealer)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   deletedAt    DateTime? 

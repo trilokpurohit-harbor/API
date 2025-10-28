@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { RoleName } from '@common/enums/role-name.enum';
+import { type Role, UserType } from '@prisma/client';
 import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 
 export class CreateUserDto {
@@ -27,7 +27,11 @@ export class CreateUserDto {
     @IsBoolean()
     isActive?: boolean;
 
-    @ApiPropertyOptional({ enum: RoleName, example: RoleName.Broker })
-    @IsEnum(RoleName)
-    role?: RoleName;
+    @ApiProperty({ enum: UserType, enumName: 'UserType', example: UserType.Broker, default: UserType.Dealer })
+    @IsEnum(UserType)
+    type?: UserType;
+
+    @ApiPropertyOptional({ examples: ['1', '2', '3'] })
+    @IsOptional()
+    roleId?: Role['id'];
 }
