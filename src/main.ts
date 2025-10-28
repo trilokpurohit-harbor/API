@@ -1,4 +1,4 @@
-import { Logger, UnprocessableEntityException, ValidationPipe } from '@nestjs/common';
+import { Logger, UnprocessableEntityException, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config as loadEnv } from 'dotenv';
@@ -13,6 +13,11 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, { bufferLogs: true, cors: { origin: '*' } });
     const configService = app.get(NestConfigService);
     const logger = new Logger('Bootstrap');
+    app.enableVersioning({
+        type: VersioningType.URI,
+        defaultVersion: '1',
+        prefix: 'v',
+    });
     app.useGlobalFilters(new AllExceptionsFilter());
     app.useGlobalPipes(
         new ValidationPipe({

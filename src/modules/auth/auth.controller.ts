@@ -3,18 +3,36 @@ import type { Request } from 'express';
 import { AuthService, LoginResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
-import { ApiBearerAuth, ApiBody } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { RoleName } from '@common/enums/role-name.enum';
 
 @Controller('auth')
 export class AuthController {
     constructor(private readonly authService: AuthService) {}
 
     @HttpCode(HttpStatus.OK)
-    @Post('login')
+    @Post('login/admin')
     @ApiBody({ type: LoginDto })
-    login(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request);
+    @ApiOperation({ summary: 'Admin login' })
+    loginAdmin(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
+        return this.authService.login(loginDto, request, RoleName.Admin);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('login/dealer')
+    @ApiBody({ type: LoginDto })
+    @ApiOperation({ summary: 'Dealer login' })
+    loginDealer(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
+        return this.authService.login(loginDto, request, RoleName.Dealer);
+    }
+
+    @HttpCode(HttpStatus.OK)
+    @Post('login/broker')
+    @ApiBody({ type: LoginDto })
+    @ApiOperation({ summary: 'Broker login' })
+    loginBroker(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
+        return this.authService.login(loginDto, request, RoleName.Broker);
     }
 
     @HttpCode(HttpStatus.OK)
