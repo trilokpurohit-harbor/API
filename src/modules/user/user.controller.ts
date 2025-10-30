@@ -1,5 +1,5 @@
 import { Body, Controller, Delete, Get, Param, ParseUUIDPipe, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -29,16 +29,17 @@ export class UserController {
         return this.userService.findOne(id);
     }
 
-    @Patch(':id')
-    update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() updateUserDto: UpdateUserDto) {
-        return this.userService.update(id, updateUserDto);
-    }
-
     @Patch('role')
+    @ApiBody({ type: AssignRoleDto })
     @ApiOperation({ description: 'Assign role to user (Admin only)' })
     @UseGuards(UserTypeGuard(UserType.Admin))
     assignRole(@Body() assignRoleDto: AssignRoleDto) {
         return this.userService.assignRole(assignRoleDto.userId, assignRoleDto.roleId);
+    }
+
+    @Patch(':id')
+    update(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string, @Body() updateUserDto: UpdateUserDto) {
+        return this.userService.update(id, updateUserDto);
     }
 
     @Delete(':id')

@@ -1,5 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
-import type { Request } from 'express';
+import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { AuthService, LoginResponse } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { AuthGuard } from './auth.guard';
@@ -15,31 +14,31 @@ export class AuthController {
     @Post('login/admin')
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Admin login' })
-    loginAdmin(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, UserType.Admin);
+    loginAdmin(@Body() loginDto: LoginDto): Promise<LoginResponse> {
+        return this.authService.login(loginDto, UserType.Admin);
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('login/dealer')
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Dealer login' })
-    loginDealer(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, UserType.Dealer);
+    loginDealer(@Body() loginDto: LoginDto): Promise<LoginResponse> {
+        return this.authService.login(loginDto, UserType.Dealer);
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('login/broker')
     @ApiBody({ type: LoginDto })
     @ApiOperation({ summary: 'Broker login' })
-    loginBroker(@Body() loginDto: LoginDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.login(loginDto, request, UserType.Broker);
+    loginBroker(@Body() loginDto: LoginDto): Promise<LoginResponse> {
+        return this.authService.login(loginDto, UserType.Broker);
     }
 
     @HttpCode(HttpStatus.OK)
     @Post('refresh')
     @ApiBody({ type: RefreshTokenDto })
-    refresh(@Body() dto: RefreshTokenDto, @Req() request: Request): Promise<LoginResponse> {
-        return this.authService.refresh(dto.refreshToken, request);
+    refresh(@Body() dto: RefreshTokenDto): Promise<LoginResponse> {
+        return this.authService.refresh(dto.refreshToken);
     }
 
     @Post('logout')

@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-    private readonly logger = new Logger(AllExceptionsFilter.name);
+    private readonly logger = new Logger(AllExceptionsFilter.name, { timestamp: true });
 
     catch(exception: unknown, host: ArgumentsHost): void {
         const httpContext = host.switchToHttp();
@@ -21,24 +21,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
         const stack = exception instanceof Error ? exception.stack : undefined;
         const timestamp = new Date().toISOString();
 
-        const logPayload = {
-            level: 'exception',
-            timestamp,
-            status,
-            method: request.method,
-            path: request.url,
-            outerMessage,
-            innerMessage,
-            name: exception instanceof Error ? exception.name : undefined,
-            cause: this.extractCause(exception),
-            correlationId: this.getCorrelationId(request),
-            user: request.user ?? null,
-            params: request.params,
-            query: request.query,
-            body: request.body,
-        };
-
-        this.logger.error(JSON.stringify(logPayload), stack);
+        this.logger.error(innerMessage, stack);
 
         const errorBody = this.buildErrorBody(status, timestamp, request.url, innerMessage, errorResponse);
 

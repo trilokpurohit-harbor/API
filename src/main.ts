@@ -1,4 +1,4 @@
-import { Logger, UnprocessableEntityException, ValidationPipe, VersioningType } from '@nestjs/common';
+import { UnprocessableEntityException, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { config as loadEnv } from 'dotenv';
@@ -6,13 +6,16 @@ import { AppModule } from './app.module';
 import { ConfigService as NestConfigService } from '@nestjs/config';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 import { ValidationError } from 'class-validator';
+import { Logger } from 'nestjs-pino';
 
 loadEnv();
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, { bufferLogs: true, cors: { origin: '*' } });
     const configService = app.get(NestConfigService);
-    const logger = new Logger('Bootstrap');
+    const logger = app.get(Logger);
+    app.useLogger(logger);
+    app.flushLogs();
     app.enableVersioning({
         type: VersioningType.URI,
         defaultVersion: '1',
@@ -58,7 +61,7 @@ async function bootstrap() {
     await app.listen(port);
     const url = await app.getUrl();
     const swaggerUrl = new URL('/api', url).toString().replace('[::1]', 'localhost');
-    logger.log(`Swagger docs available at ${swaggerUrl}`);
+    logger.log(`Swagger docs available at ${swaggerUrl}`, 'Bootstrap');
 }
 bootstrap().catch((error) => {
     // Ensure unexpected bootstrap errors surface clearly in dev tools

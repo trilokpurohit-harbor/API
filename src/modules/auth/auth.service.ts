@@ -1,10 +1,10 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService, type JwtSignOptions } from '@nestjs/jwt';
 import { compare } from 'bcryptjs';
-import type { Request } from 'express';
 import { LoginDto } from './dto/login.dto';
 import { UserProfile, UserService } from '../user/user.service';
 import { UserType } from '@prisma/client';
+import { InjectPinoLogger, PinoLogger } from 'nestjs-pino';
 
 export interface LoginResponse {
     accessToken: string;
@@ -23,11 +23,10 @@ export class AuthService {
     private readonly refreshExpiresIn: JwtSignOptions['expiresIn'];
     private readonly jwtSecret: string;
     private readonly refreshSecret: string;
-    private readonly logger = new Logger(AuthService.name);
-
     constructor(
         private readonly userService: UserService,
         private readonly jwtService: JwtService,
+        @InjectPinoLogger(AuthService.name) private readonly logger: PinoLogger,
     ) {
         this.jwtExpiresIn = (process.env.JWT_EXPIRATION as JwtSignOptions['expiresIn']) ?? '3600s';
         this.refreshExpiresIn = (process.env.JWT_REFRESH_EXPIRATION as JwtSignOptions['expiresIn']) ?? '7d';
@@ -35,24 +34,18 @@ export class AuthService {
         this.refreshSecret = process.env.JWT_REFRESH_SECRET ?? 'change-me-refresh';
     }
 
-    async login(loginInfo: LoginDto, request: Request, requiredType: UserType): Promise<LoginResponse> {
-        const user = await this.validateUser(loginInfo.email, loginInfo.password, request, requiredType);
+    async login(loginInfo: LoginDto, requiredType: UserType): Promise<LoginResponse> {
+        const user = await this.validateUser(loginInfo.email, loginInfo.password, requiredType);
         if (!user) {
-            this.logger.warn(this.formatLogMessage('auth.login.failure', request, { email: loginInfo.email }));
+            this.logger.warn('Authentication failed');
             throw new UnauthorizedException('Invalid credentials');
         }
         const userType = user.type;
         if (requiredType && userType !== requiredType) {
-            this.logger.warn(
-                this.formatLogMessage('auth.login.role_mismatch', request, {
-                    userId: user.id,
-                    expectedRole: requiredType,
-                    actualRole: userType,
-                }),
-            );
+            this.logger.warn('User type mismatch');
             throw new UnauthorizedException('Invalid credentials');
         }
-        this.logger.log(this.formatLogMessage('auth.login.success', request, { userId: user.id }));
+        this.logger.info(`User authenticated successfully ${user.email}`);
         const payload = {
             sub: user.id,
             email: user.email,
@@ -77,7 +70,7 @@ export class AuthService {
         };
     }
 
-    async refresh(refreshToken: string, request: Request): Promise<LoginResponse> {
+    async refresh(refreshToken: string): Promise<LoginResponse> {
         try {
             const payload = await this.jwtService.verifyAsync<{ sub: string }>(refreshToken, {
                 secret: this.refreshSecret,
@@ -100,7 +93,7 @@ export class AuthService {
                 secret: this.refreshSecret,
             });
 
-            this.logger.log(this.formatLogMessage('auth.refresh.success', request, { userId: user.id }));
+            this.logger.info('Refresh token issued');
 
             return {
                 accessToken,
@@ -108,29 +101,18 @@ export class AuthService {
                 user: this.mapUser(user),
             };
         } catch (error) {
-            this.logger.warn(
-                this.formatLogMessage('auth.refresh.failure', request, {
-                    message: error instanceof Error ? error.message : 'unknown',
-                }),
-            );
+            this.logger.error('Refresh token validation failed', error);
             throw new UnauthorizedException('Invalid refresh token');
         }
     }
 
-    async validateUser(
-        email: string,
-        password: string,
-        request: Request,
-        requiredType: UserType,
-    ): Promise<UserProfile | null> {
+    async validateUser(email: string, password: string, requiredType: UserType): Promise<UserProfile | null> {
         const user = await this.userService.findActiveUserForLogin(email, requiredType);
         if (!user) {
-            this.logger.debug(this.formatLogMessage('auth.login.user_missing', request, { email }));
             return null;
         }
         const isPasswordValid = await compare(password, user.passwordHash);
         if (!isPasswordValid) {
-            this.logger.debug(this.formatLogMessage('auth.login.password_mismatch', request, { email }));
             return null;
         }
         return this.userService.findOne(user.id);
@@ -143,30 +125,5 @@ export class AuthService {
             firstName: user.firstName,
             lastName: user.lastName ?? null,
         };
-    }
-
-    private formatLogMessage(event: string, request: Request, extra: Record<string, unknown> = {}): string {
-        const context = {
-            event,
-            correlationId: this.extractCorrelationId(request),
-            sessionId: this.getSessionId(request),
-            ip: request.ip,
-            userAgent: request.headers['user-agent'] ?? 'unknown',
-            ...extra,
-        };
-        return JSON.stringify(context);
-    }
-
-    private extractCorrelationId(request: Request): string | undefined {
-        const header = request.headers['x-correlation-id'] ?? request.headers['x-request-id'];
-        if (Array.isArray(header)) {
-            return header[0];
-        }
-        return header;
-    }
-
-    private getSessionId(request: Request): string | undefined {
-        const candidate = request as Request & { sessionID?: string; session?: { id?: string } };
-        return candidate.sessionID ?? candidate.session?.id;
     }
 }

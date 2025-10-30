@@ -1,9 +1,8 @@
-import { RewriteValidationOptions } from '@app/common/validators/rewrite-validation-options.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 import { type Role } from '@prisma/client';
-import { IsUUID } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsInt, IsUUID } from 'class-validator';
 
-@RewriteValidationOptions({ whitelist: false, forbidNonWhitelisted: false })
 export class AssignRoleDto {
     @ApiProperty({
         description: 'Id of the user',
@@ -12,13 +11,16 @@ export class AssignRoleDto {
         format: 'uuid',
     })
     @IsUUID()
-    userId: string;
+    userId!: string;
 
     @ApiProperty({
         examples: ['1', '2', '3'],
+        example: 1,
         description: 'Id of the role to assign',
         format: 'int',
         type: 'number',
     })
-    roleId: Role['id'];
+    @Type(() => Number)
+    @IsInt()
+    roleId!: Role['id'];
 }
