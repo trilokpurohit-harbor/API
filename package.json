@@ -1,0 +1,112 @@
+{
+    "name": "harbor-point-api",
+    "version": "0.0.1",
+    "description": "API for Harbor Point",
+    "author": "Harbor Point Equipment Finance",
+    "private": true,
+    "license": "UNLICENSED",
+    "scripts": {
+        "build": "nest build",
+        "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+        "format:check": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
+        "start": "nest start",
+        "start:dev": "nest start --watch",
+        "start:debug": "nest start --debug --watch",
+        "start:prod": "node dist/main",
+        "lint": "eslint \"src/**/*.ts\" --max-warnings=0",
+        "lint:fix": "eslint \"src/**/*.ts\" --max-warnings=0 --fix",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:cov": "jest --coverage",
+        "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
+        "test:e2e": "jest --config ./test/jest-e2e.json",
+        "prepare": "husky",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev",
+        "prisma:deploy": "prisma migrate deploy",
+        "prisma:studio": "prisma studio",
+        "prisma:reset": "prisma migrate reset",
+        "prisma:seed": "prisma db seed"
+    },
+    "dependencies": {
+        "@aws-sdk/client-cloudwatch-logs": "^3.919.0",
+        "@aws-sdk/client-ses": "^3.918.0",
+        "@nestjs/common": "^11.0.1",
+        "@nestjs/config": "^4.0.2",
+        "@nestjs/core": "^11.0.1",
+        "@nestjs/jwt": "^11.0.0",
+        "@nestjs/mapped-types": "^2.1.0",
+        "@nestjs/platform-express": "^11.0.1",
+        "@nestjs/swagger": "^11.2.1",
+        "@prisma/client": "^6.17.1",
+        "bcryptjs": "^3.0.2",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.2",
+        "dotenv": "^17.2.3",
+        "nestjs-pino": "^4.4.1",
+        "pino": "^9.5.0",
+        "pino-http": "^10.1.0",
+        "pino-pretty": "^13.1.2",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.1",
+        "swagger-ui-express": "^5.0.1"
+    },
+    "devDependencies": {
+        "@eslint/eslintrc": "^3.2.0",
+        "@eslint/js": "^9.18.0",
+        "@nestjs/cli": "^11.0.0",
+        "@nestjs/schematics": "^11.0.0",
+        "@nestjs/testing": "^11.0.1",
+        "@types/express": "^5.0.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^22.10.7",
+        "@types/supertest": "^6.0.2",
+        "eslint": "^9.18.0",
+        "eslint-config-prettier": "^10.0.1",
+        "eslint-plugin-prettier": "^5.2.2",
+        "globals": "^16.0.0",
+        "husky": "^9.1.7",
+        "jest": "^30.0.0",
+        "lint-staged": "^16.2.4",
+        "prettier": "^3.4.2",
+        "prisma": "^6.18.0",
+        "source-map-support": "^0.5.21",
+        "supertest": "^7.0.0",
+        "ts-jest": "^29.4.5",
+        "ts-loader": "^9.5.2",
+        "ts-node": "^10.9.2",
+        "tsconfig-paths": "^4.2.0",
+        "tsx": "^4.20.6",
+        "typescript": "^5.7.3",
+        "typescript-eslint": "^8.20.0"
+    },
+    "jest": {
+        "moduleFileExtensions": [
+            "js",
+            "json",
+            "ts"
+        ],
+        "rootDir": "src",
+        "testRegex": ".*\\.spec\\.ts$",
+        "transform": {
+            "^.+\\.(t|j)s$": "ts-jest"
+        },
+        "collectCoverageFrom": [
+            "**/*.(t|j)s"
+        ],
+        "coverageDirectory": "../coverage",
+        "testEnvironment": "node"
+    },
+    "lint-staged": {
+        "*.{ts,tsx,js,jsx}": [
+            "npm run lint:fix",
+            "npm run format"
+        ],
+        "*.{json,md,html,css,scss,yml,yaml}": [
+            "npm run format"
+        ]
+    },
+    "prisma": {
+        "seed": "tsx src/core/database/seed/index.ts"
+    }
+}

@@ -1,0 +1,185 @@
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { isEmail, isUUID } from 'class-validator';
+import { UserType, type Prisma, type Role, type User } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { hash } from 'bcryptjs';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
+
+const userSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    type: true,
+    lastName: true,
+    isActive: true,
+    createdAt: true,
+    updatedAt: true,
+    userRole: {
+        include: {
+            role: true,
+        },
+    },
+} satisfies Prisma.UserSelect;
+
+export type UserProfile = Prisma.UserGetPayload<{ select: typeof userSelect }>;
+
+@Injectable()
+export class UserService {
+    private static readonly SALT_ROUNDS = 12;
+
+    constructor(private readonly prisma: PrismaService) {}
+
+    async create(dto: CreateUserDto): Promise<UserProfile> {
+        const passwordHash = await this.hashPassword(dto.password);
+        let role: Role | null = null;
+        if (dto.roleId !== undefined) {
+            role = await this.findRole(dto.roleId);
+        }
+        const user = await this.prisma.client.user.create({
+            data: {
+                email: dto.email,
+                firstName: dto.firstName,
+                type: dto.type,
+                lastName: dto.lastName ?? null,
+                isActive: dto.isActive ?? true,
+                passwordHash,
+            },
+            select: userSelect,
+        });
+        if (role) {
+            await this.prisma.client.userRole.upsert({
+                where: { userId: user.id },
+                update: { roleId: role.id },
+                create: { userId: user.id, roleId: role.id },
+                select: { id: true },
+            });
+        }
+        return this.findOne(user.id);
+    }
+
+    async findAll(): Promise<UserProfile[]> {
+        const users = await this.prisma.client.user.findMany({ select: userSelect });
+        return users.map((user) => this.toEntity(user));
+    }
+
+    async findOne(identifier: string): Promise<UserProfile> {
+        const where: Prisma.UserWhereUniqueInput = isUUID(identifier)
+            ? { id: identifier }
+            : isEmail(identifier)
+              ? { email: identifier }
+              : (() => {
+                    throw new BadRequestException('Invalid user identifier format');
+                })();
+        const user = await this.prisma.client.user.findUnique({ where, select: userSelect });
+        if (!user) {
+            throw new NotFoundException(`User with identifier '${identifier}' not found`);
+        }
+        return this.toEntity(user);
+    }
+
+    async update(id: string, dto: UpdateUserDto): Promise<UserProfile> {
+        const data: Prisma.UserUpdateInput = {};
+        if (dto.email !== undefined) {
+            data.email = dto.email;
+        }
+        if (dto.firstName !== undefined) {
+            data.firstName = dto.firstName;
+        }
+        if (dto.lastName !== undefined) {
+            data.lastName = dto.lastName ?? null;
+        }
+        if (dto.isActive !== undefined) {
+            data.isActive = dto.isActive;
+        }
+        if (dto.password) {
+            data.passwordHash = await this.hashPassword(dto.password);
+        }
+        try {
+            const user = await this.prisma.client.user.update({
+                where: { id },
+                data,
+                select: userSelect,
+            });
+            if (dto.roleId !== undefined) {
+                const role = await this.findRole(dto.roleId);
+                await this.prisma.client.userRole.upsert({
+                    where: { userId: user.id },
+                    update: { roleId: role.id },
+                    create: { userId: user.id, roleId: role.id },
+                    select: { id: true },
+                });
+            }
+            return this.findOne(user.id);
+        } catch (error) {
+            this.rethrowNotFound(error, id);
+            throw error;
+        }
+    }
+
+    async assignRole(userId: string, roleIdentifier: Role['id'] | string): Promise<UserProfile> {
+        const role = await this.findRole(roleIdentifier);
+        await this.prisma.client.userRole.upsert({
+            where: { userId },
+            update: { roleId: role.id },
+            create: { userId, roleId: role.id },
+            select: { id: true },
+        });
+
+        return this.findOne(userId);
+    }
+
+    async remove(id: string): Promise<UserProfile> {
+        try {
+            const user = await this.prisma.client.user.delete({ where: { id }, select: userSelect });
+            return this.toEntity(user);
+        } catch (error) {
+            this.rethrowNotFound(error, id);
+            throw error;
+        }
+    }
+
+    findActiveUserForLogin(email: string, requiredType: UserType): Promise<User | null> {
+        const where: Prisma.UserWhereInput = {
+            email,
+            isActive: true,
+            type: requiredType,
+        };
+        return this.prisma.client.user.findFirst({ where });
+    }
+
+    async findByEmail(email: string): Promise<UserProfile | null> {
+        const user = await this.prisma.client.user.findUnique({ where: { email }, select: userSelect });
+        return user ? this.toEntity(user) : null;
+    }
+
+    private async hashPassword(password: string): Promise<string> {
+        return hash(password, UserService.SALT_ROUNDS);
+    }
+
+    private rethrowNotFound(error: unknown, id: string): asserts error is never {
+        if (error instanceof PrismaClientKnownRequestError && error.code === 'P2025') {
+            throw new NotFoundException(`User with id ${id} not found`);
+        }
+    }
+
+    private async findRole(roleIdentifier?: Role['id'] | Role['name']): Promise<Role> {
+        if (roleIdentifier === undefined || roleIdentifier === null) {
+            throw new BadRequestException('Role identifier is required');
+        }
+
+        const where: Prisma.RoleWhereUniqueInput =
+            typeof roleIdentifier === 'number' ? { id: roleIdentifier } : { name: roleIdentifier };
+
+        const role = await this.prisma.client.role.findUnique({ where });
+        if (!role) {
+            throw new NotFoundException(`Role '${roleIdentifier}' not found`);
+        }
+        return role;
+    }
+
+    private toEntity(user: UserProfile): UserProfile {
+        return { ...user };
+    }
+}
