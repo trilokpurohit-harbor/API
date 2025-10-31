@@ -95,13 +95,19 @@ Always run migrations before seeding to ensure the schema matches the code.
 
 - prisma seed will run automatically after migrations during `npm run prisma:reset`.
 
-## Coding Workflow Checklist
+## Run the codebase for first time
 
-1. Install dependencies (`npm install`) after pulling new changes.
-2. Keep `.env` updated with database credentials.
-3. Use the provided guards, filters, and DTO patterns when adding endpoints.
-4. Add unit/e2e tests in `test/` for new features.
-5. Run `npm run lint` and `npm run test` before opening a pull request.
+1. Clone the repository and navigate to the project folder.
+2. Check for Node.js 22.20.0 and npm 10.x installed, if not, install them.
+3. Copy `.env.example` to `.env` and update with your local database credentials.
+4. Install dependencies with `npm install`.
+5. Generate Prisma client: `npm run prisma:generate`.
+6. Apply database migrations: `npm run prisma:migrate`.
+7. Seed baseline data: `npm run prisma:seed`.
+8. If you need to reset the database in the future, run `npm run prisma:reset`.
+9. Start the development server by one of the following commands:
+    - `npm run start:dev` (with hot-reload)
+    - Press `F5` in VS Code (with debugger support)
 
 ## Need Help?
 
