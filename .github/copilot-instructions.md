@@ -26,7 +26,7 @@
 - [x] Install Required Extensions (no extensions needed)
   <!-- ONLY install extensions provided mentioned in the get_project_setup_info. Skip this step otherwise and mark as completed. -->
 
-- [x] Compile the Project (pnpm run build)
+- [x] Compile the Project (npm run build)
   <!--
   Verify that all previous steps have been completed.
   Install any missing dependencies.
@@ -34,7 +34,7 @@
   Check for markdown files in project folder for relevant instructions on how to do this.
   -->
 
-- [x] Create and Run Task (added pnpm start:dev task)
+- [x] Create and Run Task (added npm start:dev task)
   <!--
   Verify that all previous steps have been completed.
   Check https://code.visualstudio.com/docs/debugtest/tasks to determine if the project needs a task. If so, use the create_and_run_task to create and launch a task based on package.json, README.md, and project structure.
@@ -106,5 +106,5 @@ Before starting a new task in the above plan, update progress in the plan.
 - Work through each checklist item systematically.
 - Keep communication concise and focused.
 - Follow development best practices.
-- After schema changes, ensure codebase has latest Prisma types by running `pnpm prisma:generate`.
-- After successful generation, run `pnpm prisma:migrate` to apply changes to the local database.
+- After schema changes, ensure codebase has latest Prisma types by running `npm run prisma:generate`.
+- After successful generation, run `npm run prisma:migrate` to apply changes to the local database.

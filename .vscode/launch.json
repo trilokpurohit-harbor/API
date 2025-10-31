@@ -1,21 +1,21 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Debug NestJS with Swagger",
-      "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["run", "start:debug"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal",
-      "internalConsoleOptions": "neverOpen",
-      "envFile": "${workspaceFolder}/.env",
-      "serverReadyAction": {
-        "action": "openExternally",
-        "pattern": "Swagger docs available at (https?://\\S+)",
-        "uriFormat": "%s"
-      }
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Debug NestJS with Swagger",
+            "runtimeExecutable": "npm",
+            "runtimeArgs": ["run", "start:debug"],
+            "cwd": "${workspaceFolder}",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "envFile": "${workspaceFolder}/.env",
+            "serverReadyAction": {
+                "action": "openExternally",
+                "pattern": "Swagger docs available at (https?://\\S+)",
+                "uriFormat": "%s"
+            }
+        }
+    ]
 }
